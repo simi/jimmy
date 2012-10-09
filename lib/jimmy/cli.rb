@@ -23,8 +23,14 @@ module Jimmy
 
     desc 'destroy', 'Destroy web application'
     method_option :name, :type => :string, :banner => 'app_name', :desc => 'Application name', :required => true
+    method_option :location, :type => :string, :banner => '/var/apps', :desc => 'Application home directory', :default => '/var/apps'
     method_option :nginx_dir, :type => :string, :banner => '/etc/nginx', :desc => 'Nginx directory', :default => '/etc/nginx'
     def destroy
+      run "userdel #{options[:name]}"
+      remove_dir app_path
+      remove File.join(nginx_available_sites_path, options[:name])
+      remove File.join(nginx_enabled_sites_path, options[:name])
+      say "App removed", :green
     end
 
     def self.source_root
