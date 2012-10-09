@@ -28,8 +28,8 @@ module Jimmy
     def destroy
       run "userdel #{options[:name]}"
       remove_dir app_path
-      remove File.join(nginx_available_sites_path, options[:name])
-      remove File.join(nginx_enabled_sites_path, options[:name])
+      remove_file File.join(nginx_available_sites_path, options[:name])
+      remove_file File.join(nginx_enabled_sites_path, options[:name])
       say "App removed", :green
     end
 
