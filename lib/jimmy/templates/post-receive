@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+
+def fail message=nil
+  puts message unless message.nil?
+  exit 1
+end
+
+def shell cmd
+  output = `#{cmd}`
+  output.chomp if $? == 0
+end
+
+def log_shell message, cmd
+  print "#{message}... "
+  output = `#{cmd}`
+  if $? == 0
+    puts "done."
+  else
+    fail "failed!\n\n#{output.chomp}"
+  end
+end
+
+STDOUT.sync = true
+
+refspecs = STDIN.read.chomp.split("\n")
+old_id, new_id, ref_name = refspecs.first.split(/\s+/)
+new_branch = ref_name.scan(/^refs\/heads\/(.*)$/).flatten.first
+
+# Otherwise operations in sub-gits fail
+ENV.delete "GIT_DIR"
+
+ENV["RAILS_ENV"] = "production"
+
+if new_branch.nil?
+  fail "Couldn't figure out what branch '#{ref_name}' refers to, not updating."
+else
+  env_git = "env -i #{`which git`.chomp}"
+  Dir.chdir('..') do # change dir to .git/..
+    branches = shell("#{env_git} branch").split("\n")
+    star_branches = branches.grep(/^\*/)
+    old_branch = star_branches.empty? ? nil : star_branches.first.split(/\s+/, 2)[-1]
+    branches.map! { |branch| branch.split(/\s+/, 2).last }
+
+    if !branches.include?(new_branch)
+      log_shell "Creating the '#{new_branch}' branch", "#{env_git} checkout -b '#{new_branch}'"
+    end
+
+    if old_branch != new_branch
+      log_shell "Switching to the '#{new_branch}' branch", "#{env_git} checkout '#{new_branch}'"
+    end
+
+    log_shell "Updating to #{new_id[0...7]}", "#{env_git} reset --hard '#{new_id}'"
+    log_shell "Updating submodules", "#{env_git} submodule update --init"
+    log_shell "Bundling", "bundle --deployment"
+    log_shell "Pre-compiling assets", "bundle exec rake assets:precompile:primary RAILS_GROUPS=assets"
+    log_shell "Migrating", "bundle exec rake db:migrate"
+    log_shell "Regenerating upstart configuration", "foreman export upstart #{ENV["HOME"]}/.init --app '#{ENV["USER"]}' --log '#{ENV["HOME"]}/current/log'"
+    log_shell "Restarting", "initctl restart #{ENV["USER"]} || initctl start #{ENV["USER"]}"
+  end
+end

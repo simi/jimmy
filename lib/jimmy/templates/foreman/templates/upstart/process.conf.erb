@@ -1,0 +1,13 @@
+start on starting <%= app %>-<%= name %>
+stop on stopping <%= app %>-<%= name %>
+respawn
+
+setuid <%= shell_quote user %>
+chdir <%= shell_quote engine.root %>
+
+env PORT=<%= port %>
+<%- engine.env.each_pair do |key, value| -%>
+env <%= key.upcase %>=<%= shell_quote value %>
+<% end %>
+
+exec <%= process.command %> >> <%= log %>/<%=name%>-<%=num%>.log 2>&1

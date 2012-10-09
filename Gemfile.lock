@@ -1,0 +1,16 @@
+PATH
+  remote: .
+  specs:
+    jimmy (0.0.1)
+      thor
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    thor (0.16.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  jimmy!

@@ -1,0 +1,11 @@
+server {
+  listen 80;
+  server_name <%= domains %>;
+  access_log /var/log/nginx/access-<%= options[:name] %>.log;
+  root <%= File.join(git_repo_path, 'public') %>;
+  location @<%= options[:name] %>-web {
+    proxy_pass http://unix:/<%= socket_path %>;
+    proxy_set_header Host $host;
+  }
+  try_files $uri @<%= options[:name] %>-web;
+}
