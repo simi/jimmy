@@ -16,6 +16,7 @@ module Jimmy
       create_app_user
       init_git_repo
       copy_hooks
+      copy_foreman_custom_templates
       install_nginx
       say "Done, enjoy!", :green
     end
